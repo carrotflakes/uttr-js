@@ -41,7 +41,7 @@ functionDefinition =
 
 constantDefinition =
   {
-    identifier: identifier
+    pattern: expression<\"pattern">
     _ "=" _
     expression: expression<\"expression">
     type:=constantDefinition
@@ -521,3 +521,4 @@ many1<x> = @(x *(_ x))
 sepBy<x, sep> = @?(x *(_ sep _ x))
 sepBy1<x, sep> = @(x *(_ sep _ x))
 sepEndBy1<x, sep> = @(x *(_ sep _ x) ?(_ sep))
+

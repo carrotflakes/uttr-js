@@ -21,6 +21,13 @@ definition_
     generator: false,
     expression: false,
     async: false
+  },
+  {
+    type: "constantDefinition"
+    pattern,
+    expression
+  } = {
+    TODO
   }
 
 block_ xs = map([
@@ -30,9 +37,20 @@ block_ xs = map([
     whereClause
   } = map(definition_, whereClause) +
     []
+  {
+    
+  }
 ], xs)
 
-patternDestructure pattern = {conditions: , indicators: }
+patternDestructure pattern indicators =
+  [
+    {
+      type: "valueExpression"
+    } = {}
+    {
+      type: "variableExpression" "applyExpression" "listExpression" "objectExpression" "consExpression" "atPattern"
+    }
+  ](pattern)
 
 main(xs) = {
   type: "Program",
@@ -44,3 +62,15 @@ main(xs) = {
 map
   (f, x:xs) = f(x):map(f, xs),
   (_, [])   = []
+
+
+foldl
+  (f, l, [])   = l,
+  (f, l, r:rs) = foldl(f, f(l, r), rs)
+
+filter
+  (f, [])   = [],
+  (f, x:xs)
+    | f(x)  = x:filter(f, xs)
+    | true  = filter(f, xs)
+
