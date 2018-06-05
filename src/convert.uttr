@@ -1,0 +1,46 @@
+
+statement
+  {
+    type: "definitionStatement",
+    value
+  } = definition_(value)
+
+definition_
+  {
+    type: "functionDefinition",
+    identifier,
+    block
+  } = {
+    type: "FunctionDeclaration",
+    id: {type: "Identifier", name: identifier},
+    params: [],
+    body: {
+      type: "BlockStatement",
+      body: block_(block)
+    },
+    generator: false,
+    expression: false,
+    async: false
+  }
+
+block_ xs = map([
+  {
+    patterns,
+    guardClausesOrBody,
+    whereClause
+  } = map(definition_, whereClause) +
+    []
+], xs)
+
+patternDestructure pattern = {conditions: , indicators: }
+
+main(xs) = {
+  type: "Program",
+  body: map(statement, xs),
+  sourceType: "script"
+}
+
+
+map
+  (f, x:xs) = f(x):map(f, xs),
+  (_, [])   = []
