@@ -197,7 +197,7 @@ factor<mode> =
       type:=listExpression
     |
       members: ("{" _ sepBy<member<mode>, ","> _ "}")
-      type:=listExpression
+      type:=objectExpression
     |
       value: ("[" _ block _ "]")
       type:=closureExpression
@@ -221,7 +221,7 @@ factor<mode> =
       type:=listExpression
     |
       members: ("{" _ sepBy<member<mode>, ","> _ "}")
-      type:=listExpression
+      type:=objectExpression
     }
   )
 
@@ -231,10 +231,17 @@ member<mode> =
     _ ":" _
     value: expression<mode>
     type:=propertyMember
-  |
+  }
+|
+  {
     identifier: identifier
     type:=propertyMember
-  |
+  } -> {
+    $.value = {type: "variableExpression", identifier: $.identifier};
+    return $;
+  }
+|
+  {
     "..." _
     value: expression<mode>
     type:=spreadMember
@@ -345,11 +352,7 @@ singleLineComment
 
 identifier = !reservedWord identifierName
 
-identifierName "identifier" =
-  {
-    name: @(identifierStart *identifierPart) -> { return $.join(""); }
-    type:= identifier
-  }
+identifierName "identifier" = @(identifierStart *identifierPart) -> { return $.join(""); }
 
 identifierStart =
   `unicodeLetter
@@ -521,4 +524,3 @@ many1<x> = @(x *(_ x))
 sepBy<x, sep> = @?(x *(_ sep _ x))
 sepBy1<x, sep> = @(x *(_ sep _ x))
 sepEndBy1<x, sep> = @(x *(_ sep _ x) ?(_ sep))
-

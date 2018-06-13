@@ -1,61 +1,299 @@
 
-statement
-  {
-    type: "definitionStatement",
-    value
-  } = definition_(value)
+main(statements) = {
+  type: "Program",
+  body: concat(map(statement2body, statements)),
+  sourceType: "script"
+}
 
-definition_
-  {
-    type: "functionDefinition",
-    identifier,
-    block
-  } = {
-    type: "FunctionDeclaration",
-    id: {type: "Identifier", name: identifier},
-    params: [],
-    body: {
-      type: "BlockStatement",
-      body: block_(block)
-    },
-    generator: false,
-    expression: false,
-    async: false
-  },
-  {
-    type: "constantDefinition"
-    pattern,
-    expression
-  } = {
-    TODO
-  }
+statement2body
+{
+  type: "definitionStatement",
+  value
+} = definition2body(value)
+
+definition2body
+{
+  type: "functionDefinition",
+  identifier,
+  block
+} = [function(identifier, block_(block))],
+{
+  type: "constantDefinition",
+  pattern,
+  expression
+} = [variableDecl([[identifier("$"), expression2expression(expression)]])] +
+  pattern2body(pattern)
 
 block_ xs = map([
   {
     patterns,
     guardClausesOrBody,
     whereClause
-  } = map(definition_, whereClause) +
-    []
-  {
-    
-  }
+  } = concat(map(pattern2body, patterns)) +
+      concat(map(definition2body, whereClause)) +
+      [
+        {
+          type: "body",
+          value
+        } = [returnStat(expression2expression(value))],
+        {
+          type: "guardClauses",
+          value
+        } = map([{guard, body} = ifStat(expression2expression(guard), [returnStat(expression2expression(body))])], value)
+      ](guardClausesOrBody)
 ], xs)
 
-patternDestructure pattern indicators =
-  [
-    {
-      type: "valueExpression"
-    } = {}
-    {
-      type: "variableExpression" "applyExpression" "listExpression" "objectExpression" "consExpression" "atPattern"
-    }
-  ](pattern)
+pattern2body(pattern) = [
+  ifStat(notExpr(andExpr(conditions)), [failedStat]),
+  variableDecl(bindings)
+]
+{
+  {conditions, bindings} = patternDestructure(pattern, identifier("$"))
+}
 
-main(xs) = {
-  type: "Program",
-  body: map(statement, xs),
-  sourceType: "script"
+patternDestructure(pattern, indicator) = [
+  {
+    type: "valueExpression",
+    value
+  } = {
+    conditions: [callExpr("$deepEqual", [indicator, value2expression(value)])],
+    bindings: []
+  },
+  {
+    type: "variableExpression",
+    identifier
+  } = {
+    conditions: [],
+    bindings: [[identifier, indicator]]
+  },
+  {
+    type: "listExpression",
+    value
+  } = foldl(merge, {
+    conditions: [
+      binaryExpr("instanceof", indicator, identifier("Array")),
+      binaryExpr("===", dotMemberExpr(indicator, identifier("length")), literal(length(value)))
+    ],
+    bindings: []
+  } :
+  map([[i, v] = patternDestructure(value, memberExpr(indicator, literal(i)))], enumerate(value))),
+  {
+    type: "objectExpression",
+    members
+  } = foldl(merge, {
+    conditions: [andExpr([
+      binaryExpr("instanceof", indicator, identifier("Object")),
+      notExpr(binaryExpr("instanceof", indicator, identifier("Array")))
+    ])],
+    bindings: []
+  } :
+  map([
+    {type: "propertyMember", identifier: name, value} = patternDestructure(value, memberExpr(indicator, literal(name)))
+  ], members)),
+  {
+    type: "consExpression",
+    car, cdr
+  } = foldl(merge, [
+    {
+      conditions: [andExpr([
+        binaryExpr("instanceof", indicator, identifier("Array")),
+        binaryExpr(">", dotMemberExpr(indicator, identifier("length")), literal(1))
+      ])],
+      bindings: []
+    },
+    patternDestructure(car, memberExpr(indicator, literal(0))),
+    patternDestructure(cdr, callExpr(dotMemberExpr(indicator, identifier("slice")), [literal(1)]))
+  ])
+](pattern)
+{
+  merge({conditions: c1, bindings: b1}, {conditions: c2, bindings: b2}) = {conditions: c1 + c2, bindings: b1 + b2}
+}
+//"applyExpression" "atPattern"
+
+value2expression
+{
+  type: "numberValue",
+  value
+} = literal(value),
+{
+  type: "stringValue",
+  value
+} = literal(value),
+{
+  type: "boolValue",
+  value
+} = literal(value),
+{
+  type: "nullValue"
+} = literal(null)
+// TODO
+
+expression2expresssion
+{
+  type: "valueExpression",
+  value
+} = value2expression(value),
+{
+  type: "variableExpression",
+  identifier: name
+} = identifier(name),
+{
+  type: "applyExpression",
+  operator,
+  args
+} = {
+  type: "CallExpression",
+  callee: expression2expression(operator),
+  arguments: map(expression2expression, args)
+},
+{
+  type: "listExpression",
+  value
+} = {
+  type: "ArrayExpression",
+  elements: map(expression2expression, value)
+},
+{
+  type: "objectExpression",
+  members
+} = {
+  type: "ObjectExpression",
+  properties: map([
+    {type: "propertyMember", identifier: name, value} = {
+      type: "Property",
+      key: identifier(name),
+      computed: false,
+      value: expression2expression(value),
+      kind: "init",
+      method: false,
+      shorthand: false
+    },
+    {type: "spreadMember", value} = {
+      type: "SpreadElement",
+      argument: expression2expression(value)
+    }
+  ], members)
+},
+{
+  type: "consExpression",
+  car,
+  cdr
+} = callExpr(memberExpr({
+  type: "ArrayExpression",
+  elements: [expression2expression(car)]
+}, identifier("concat")), expression2expression(cdr))
+
+
+function(identifier, body) = {
+  type: "FunctionDeclaration",
+  id: {type: "Identifier", name: identifier},
+  params: [],
+  body,
+  generator: false,
+  expression: false,
+  async: false
+}
+
+guardedBlock
+  ([], [], expression)               = blockState([returnStatement(expression)]),
+  ([], bindings, expression)         = blockState([variableDecl(bindings), returnStat(expression)]),
+  (conditions, bindings, expression) = ifStat(andExpr(conditions), guardedBlock([], bindings, expression))
+
+andExpr(arguments) = foldl([(l, r) = logicalExpr("&&", l, r)], arguments)
+
+failedStat = {
+  type: "ThrowStatement",
+  argument: {
+    type: "NewExpression",
+    callee: {
+      type: "Identifier",
+      name: "Error"
+    },
+    arguments: []
+  }
+}
+
+variableDecl(bindings) = {
+  type: "VariableDeclaration",
+  kind: "const",
+  declarations: map([
+    [identifier, init] = {
+      type: "VariableDeclarator",
+      id: {
+        type: "Identifier",
+        name: identifier
+      },
+      init
+    }
+  ], bindings)
+}
+
+callExpr(callee, arguments) = {
+  type: "CallExpression",
+  callee,
+  arguments
+}
+
+memberExpr(object, property) = {
+  type: "MemberExpression",
+  computed: true,
+  object,
+  property
+}
+
+dotMemberExpr(object, property) = {
+  type: "MemberExpression",
+  computed: false,
+  object,
+  property
+}
+
+logicalExpr(operator, left, right) = {
+  type: "LogicalExpression",
+  operator,
+  left,
+  right
+}
+
+notExpr(argument) = {
+  type: "UnaryExpression",
+  operator,
+  argument,
+  prefix: true
+}
+
+binaryExpr(operator, left, right) = {
+  type: "BinaryExpression",
+  operator,
+  left,
+  right
+}
+
+identifier(name) = {
+  type: "Identifier",
+  name
+}
+
+literal(value) = {
+  type: "Literal",
+  raw: json(value)
+}
+
+blockStat(body) = {
+  type: "BlockStatement",
+  body: blockBody
+}
+
+ifStat(test, body) = {
+  type: "IfStatement",
+  test,
+  consequent: body,
+  alternate: null
+}
+
+returnStat(argument) = {
+  type: "ReturnStatement",
+  argument
 }
 
 
@@ -63,8 +301,8 @@ map
   (f, x:xs) = f(x):map(f, xs),
   (_, [])   = []
 
-
 foldl
+  (f, r:rs)    = foldl(f, r, rs),
   (f, l, [])   = l,
   (f, l, r:rs) = foldl(f, f(l, r), rs)
 
@@ -74,3 +312,22 @@ filter
     | f(x)  = x:filter(f, xs)
     | true  = filter(f, xs)
 
+length
+  []     = 0,
+  (_:xs) = 1 + length(xs)
+
+concat xs = foldl("+", xs)
+
+range
+  (end) = range(0, end, 1),
+  (start, end) = range(start, end, 1),
+  (start, end, step)
+    | start < end = start:range(start + step, end, step)
+    | true        = []
+
+zip
+  ([], _) = [],
+  (_, []) = [],
+  (x:xs, y:ys) = [x, y]:zip(xs, ys)
+
+enumerate xs = zip(range(length(xs)), xs)
