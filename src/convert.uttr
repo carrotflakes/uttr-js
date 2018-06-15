@@ -1,5 +1,5 @@
 
-main(statements) = {
+main statements = {
   type: "Program",
   body: concat(map(statement2body, statements)),
   sourceType: "script"
@@ -14,23 +14,28 @@ statement2body
 definition2body
 {
   type: "functionDefinition",
-  identifier,
+  identifier: name,
   block
-} = [function(identifier, block_(block))],
+} = [function(identifier(name), functionBlock(block))],
 {
   type: "constantDefinition",
   pattern,
   expression
-} = [variableDecl([[identifier("$"), expression2expression(expression)]])] +
-  pattern2body(pattern)
+} = variableDecls([["$", expression2expression(expression)]]) +
+  pattern2body(pattern, identifier("$"))
 
-block_ xs = map([
+functionBlock xs = blockStat(map([
   {
     patterns,
     guardClausesOrBody,
     whereClause
-  } = concat(map(pattern2body, patterns)) +
-      concat(map(definition2body, whereClause)) +
+  } = backtrackable(
+      [ifStat(binaryExpr("!==", dotMemberExpr(identifier("arguments"), identifier("length")), literal(length(patterns))), failedStat())] +
+      variableDecls(map([i = ["$" + str(i), memberExpr(identifier("arguments"), literal(i))]], range(length(patterns)))) +
+      concat(
+        map([[i, p] = pattern2body(p, identifier("$" + str(i)))],
+          enumerate(patterns)) +
+        map(definition2body, whereClause)) +
       [
         {
           type: "body",
@@ -39,16 +44,13 @@ block_ xs = map([
         {
           type: "guardClauses",
           value
-        } = map([{guard, body} = ifStat(expression2expression(guard), [returnStat(expression2expression(body))])], value)
-      ](guardClausesOrBody)
-], xs)
+        } = map([{guard, body} = ifStat(expression2expression(guard), returnStat(expression2expression(body)))], value)
+      ](guardClausesOrBody))
+], xs))
 
-pattern2body(pattern) = [
-  ifStat(notExpr(andExpr(conditions)), [failedStat]),
-  variableDecl(bindings)
-]
+pattern2body(pattern, indicator) = [ifStat(notExpr(andExpr(conditions)), failedStat())] + variableDecls(bindings)
 {
-  {conditions, bindings} = patternDestructure(pattern, identifier("$"))
+  {conditions, bindings} = patternDestructure(pattern, indicator)
 }
 
 patternDestructure(pattern, indicator) = [
@@ -56,7 +58,7 @@ patternDestructure(pattern, indicator) = [
     type: "valueExpression",
     value
   } = {
-    conditions: [callExpr("$deepEqual", [indicator, value2expression(value)])],
+    conditions: [callExpr(identifier("$equal"), [indicator, value2expression(value)])],
     bindings: []
   },
   {
@@ -76,7 +78,7 @@ patternDestructure(pattern, indicator) = [
     ],
     bindings: []
   } :
-  map([[i, v] = patternDestructure(value, memberExpr(indicator, literal(i)))], enumerate(value))),
+  map([[i, v] = patternDestructure(v, memberExpr(indicator, literal(i)))], enumerate(value))),
   {
     type: "objectExpression",
     members
@@ -97,7 +99,7 @@ patternDestructure(pattern, indicator) = [
     {
       conditions: [andExpr([
         binaryExpr("instanceof", indicator, identifier("Array")),
-        binaryExpr(">", dotMemberExpr(indicator, identifier("length")), literal(1))
+        binaryExpr(">=", dotMemberExpr(indicator, identifier("length")), literal(1))
       ])],
       bindings: []
     },
@@ -128,7 +130,7 @@ value2expression
 } = literal(null)
 // TODO
 
-expression2expresssion
+expression2expression
 {
   type: "valueExpression",
   value
@@ -141,11 +143,30 @@ expression2expresssion
   type: "applyExpression",
   operator,
   args
-} = {
+}
+| typeOf(operator) == "object" = {
   type: "CallExpression",
   callee: expression2expression(operator),
   arguments: map(expression2expression, args)
-},
+}
+| operator == "+" = {
+  type: "CallExpression",
+  callee: identifier("$plus"),
+  arguments: map(expression2expression, args)
+}
+| operator == "==" = {
+  type: "CallExpression",
+  callee: identifier("$equal"),
+  arguments: map(expression2expression, args)
+}
+| operator == "!=" = notExpr({
+  type: "CallExpression",
+  callee: identifier("$equal"),
+  arguments: map(expression2expression, args)
+})
+| elem(operator, ["-", "*", "/", "%", "<", ">", "<=", ">="]) = binaryExpr(operator, expression2expression(args[0]), expression2expression(args[1]))
+| elem(operator, ["&&", "||"]) = logicalExpr(operator, expression2expression(args[0]), expression2expression(args[1]))
+| operator == "[]" = memberExpr(expression2expression(args[0]), expression2expression(args[1])),
 {
   type: "listExpression",
   value
@@ -178,15 +199,32 @@ expression2expresssion
   type: "consExpression",
   car,
   cdr
-} = callExpr(memberExpr({
+} = callExpr(dotMemberExpr({
   type: "ArrayExpression",
   elements: [expression2expression(car)]
-}, identifier("concat")), expression2expression(cdr))
+}, identifier("concat")), [expression2expression(cdr)]),
+{
+  type: "templateLiteral",
+  parts
+} = strConcatExpr(map([
+  {
+    type: "string",
+    value
+  } = literal(value),
+  {
+    type: "expression",
+    value
+  } = callExpr(identifier("$str"), [expression2expression(value)])
+], parts)),
+{
+  type: "closureExpression",
+  block
+} = function(null, functionBlock(block))
 
 
-function(identifier, body) = {
+function(id, body) = {
   type: "FunctionDeclaration",
-  id: {type: "Identifier", name: identifier},
+  id,
   params: [],
   body,
   generator: false,
@@ -194,24 +232,46 @@ function(identifier, body) = {
   async: false
 }
 
+backtrackable(body) =
+{
+  type: "TryStatement",
+  block: blockStat(body),
+  handler: {
+    type: "CatchClause",
+    param: identifier("e"),
+    body: blockStat([
+        ifStat(
+          binaryExpr(
+            "!==",
+            dotMemberExpr(identifier("e"), identifier("message")),
+            literal("backtrack")),
+          throwStat(identifier("e")))])
+  },
+  finalizer: null
+}
+
 guardedBlock
-  ([], [], expression)               = blockState([returnStatement(expression)]),
-  ([], bindings, expression)         = blockState([variableDecl(bindings), returnStat(expression)]),
+  ([], [], expression)               = blockStat([returnStatement(expression)]),
+  ([], bindings, expression)         = blockStat([variableDecl(bindings), returnStat(expression)]),
   (conditions, bindings, expression) = ifStat(andExpr(conditions), guardedBlock([], bindings, expression))
 
-andExpr(arguments) = foldl([(l, r) = logicalExpr("&&", l, r)], arguments)
+andExpr
+  [] = literal(true),
+  arguments = foldl([(l, r) = logicalExpr("&&", l, r)], arguments)
 
-failedStat = {
-  type: "ThrowStatement",
-  argument: {
+strConcatExpr
+  [] = literal(""),
+  arguments = foldl([(l, r) = binaryExpr("+", l, r)], arguments)
+
+failedStat() = throwStat({
     type: "NewExpression",
-    callee: {
-      type: "Identifier",
-      name: "Error"
-    },
-    arguments: []
-  }
-}
+    callee: identifier("Error"),
+    arguments: [literal("backtrack")]
+  })
+
+variableDecls
+  []       = [],
+  bindings = [variableDecl(bindings)]
 
 variableDecl(bindings) = {
   type: "VariableDeclaration",
@@ -257,7 +317,7 @@ logicalExpr(operator, left, right) = {
 
 notExpr(argument) = {
   type: "UnaryExpression",
-  operator,
+  operator: "!",
   argument,
   prefix: true
 }
@@ -276,12 +336,13 @@ identifier(name) = {
 
 literal(value) = {
   type: "Literal",
+  value,
   raw: json(value)
 }
 
 blockStat(body) = {
   type: "BlockStatement",
-  body: blockBody
+  body
 }
 
 ifStat(test, body) = {
@@ -293,6 +354,11 @@ ifStat(test, body) = {
 
 returnStat(argument) = {
   type: "ReturnStatement",
+  argument
+}
+
+throwStat(argument) = {
+  type: "ThrowStatement",
   argument
 }
 
@@ -312,11 +378,17 @@ filter
     | f(x)  = x:filter(f, xs)
     | true  = filter(f, xs)
 
+elem
+  (x, [])   = false,
+  (x, y:ys)
+  | x == y = true
+  | true = elem(x, ys)
+
 length
   []     = 0,
   (_:xs) = 1 + length(xs)
 
-concat xs = foldl("+", xs)
+concat xs = foldl("+", [], xs)
 
 range
   (end) = range(0, end, 1),
