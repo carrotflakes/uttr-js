@@ -1,8 +1,8 @@
 {
-  "name": "uttr-js",
+  "name": "uttr",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/main.js",
   "scripts": {
     "start": "npm run build && node dist/main.js",
     "build": "webpack",

@@ -136,6 +136,17 @@ operator5<mode> =
 
 operator6<mode> =
   {
+    type:= "atPattern"
+    left: operator7<mode>
+    _
+    "@"
+    _
+    right: operator7<mode>
+  }
+| operator7<mode>
+
+operator7<mode> =
+  {
     operator: `"-"
     _
     right: applies<mode>
@@ -157,11 +168,11 @@ applies<mode> =
     type:=applyExpression
   |
     operator: \"[]"
-    args: @(factor<mode> _ "[" _ expression<mode> _ "]")
+    args: @(applies<mode> _ "[" _ expression<mode> _ "]")
     type:=applyExpression
   |
     operator: \"[]"
-    args: @(factor<mode> _ "." _ {
+    args: @(applies<mode> _ "." _ {
       value: {
         type:=stringValue
         value: identifier

@@ -6,6 +6,8 @@ module.exports = {
     path: __dirname + "/dist",
     filename: "main.js",
     sourcePrefix: "",
+    library: 'uttr',
+    libraryTarget: 'commonjs2',
   },
   module: {
     rules: [
