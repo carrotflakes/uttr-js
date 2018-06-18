@@ -19,6 +19,10 @@ module.exports = {
       {
         test: /\.sg/,
         use: "snakeparser-loader"
+      },
+      {
+        test: /\.uttr/,
+        use: "uttr-loader"
       }
     ]
   }

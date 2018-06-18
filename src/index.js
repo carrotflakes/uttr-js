@@ -1,6 +1,6 @@
 import parse from './uttr.sg';
 import escodegen from 'escodegen';
-import convert from './convert.js';
+import convert from './convert.uttr';
 
 class Compiler {
 
