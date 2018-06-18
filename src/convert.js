@@ -806,42 +806,128 @@ var $tmp;
     }
 ])
 const preDefinitions = $tmp;
-($tmp = [{
-        type: 'ExpressionStatement',
-        expression: {
-            type: 'AssignmentExpression',
-            operator: '=',
-            left: {
-                type: 'MemberExpression',
-                computed: false,
-                object: {
-                    type: 'Identifier',
-                    name: 'module'
-                },
-                property: {
-                    type: 'Identifier',
-                    name: 'exports'
+function postDefinitions() {
+    try {
+        if (arguments.length !== 1)
+            throw new Error('backtrack');
+        const $0 = arguments[0];
+        const xs = $0;
+        return [{
+                type: 'ExpressionStatement',
+                expression: {
+                    type: 'AssignmentExpression',
+                    operator: '=',
+                    left: {
+                        type: 'MemberExpression',
+                        computed: false,
+                        object: {
+                            type: 'Identifier',
+                            name: 'module'
+                        },
+                        property: {
+                            type: 'Identifier',
+                            name: 'exports'
+                        }
+                    },
+                    right: {
+                        type: 'ObjectExpression',
+                        properties: map(function () {
+                            try {
+                                if (arguments.length !== 1)
+                                    throw new Error('backtrack');
+                                const $0 = arguments[0];
+                                const x = $0;
+                                return {
+                                    type: 'Property',
+                                    key: {
+                                        type: 'Identifier',
+                                        name: x
+                                    },
+                                    computed: false,
+                                    value: {
+                                        type: 'Identifier',
+                                        name: x
+                                    },
+                                    kind: 'init',
+                                    method: false,
+                                    shorthand: true
+                                };
+                            } catch (e) {
+                                if (e.message !== 'backtrack')
+                                    throw e;
+                            }
+                        }, xs)
+                    }
                 }
-            },
-            right: {
-                type: 'Identifier',
-                name: 'main'
-            }
-        }
-    }])
-const postDefinitions = $tmp;
+            }];
+    } catch (e) {
+        if (e.message !== 'backtrack')
+            throw e;
+    }
+}
 function main() {
     try {
         if (arguments.length !== 1)
             throw new Error('backtrack');
         const $0 = arguments[0];
         const statements = $0;
+        $tmp = (nub(concat(map(function () {
+            try {
+                if (arguments.length !== 1)
+                    throw new Error('backtrack');
+                const $0 = arguments[0];
+                if (!($0 instanceof Object && !($0 instanceof Array) && $equal($0['type'], 'functionDefinition')))
+                    throw new Error('backtrack');
+                const identifier = $0['identifier'];
+                return [identifier];
+            } catch (e) {
+                if (e.message !== 'backtrack')
+                    throw e;
+            }
+            try {
+                if (arguments.length !== 1)
+                    throw new Error('backtrack');
+                const $0 = arguments[0];
+                if (!($0 instanceof Object && !($0 instanceof Array) && $equal($0['type'], 'constantDefinition')))
+                    throw new Error('backtrack');
+                const pattern = $0['pattern'];
+                return map(function () {
+                    try {
+                        if (arguments.length !== 1)
+                            throw new Error('backtrack');
+                        const $0 = arguments[0];
+                        const x = $0;
+                        return x[0];
+                    } catch (e) {
+                        if (e.message !== 'backtrack')
+                            throw e;
+                    }
+                }, patternDestructure(pattern, null)['bindings']);
+            } catch (e) {
+                if (e.message !== 'backtrack')
+                    throw e;
+            }
+        }, map(function () {
+            try {
+                if (arguments.length !== 1)
+                    throw new Error('backtrack');
+                const $0 = arguments[0];
+                if (!($0 instanceof Object && !($0 instanceof Array)))
+                    throw new Error('backtrack');
+                const value = $0['value'];
+                return value;
+            } catch (e) {
+                if (e.message !== 'backtrack')
+                    throw e;
+            }
+        }, statements)))))
+        const exportsVariables = $tmp;
         return {
             type: 'Program',
             body: $plus($plus($plus(preDefinitions, [varDecl([[
                         '$tmp',
                         null
-                    ]])]), concat(map(statement2body, statements))), postDefinitions),
+                    ]])]), concat(map(statement2body, statements))), postDefinitions(exportsVariables)),
             sourceType: 'script'
         };
     } catch (e) {
@@ -2216,4 +2302,89 @@ function enumerate() {
             throw e;
     }
 }
-module.exports = main;
+function nub() {
+    try {
+        if (arguments.length !== 1)
+            throw new Error('backtrack');
+        const $0 = arguments[0];
+        const xs = $0;
+        function f() {
+            try {
+                if (arguments.length !== 2)
+                    throw new Error('backtrack');
+                const $0 = arguments[0], $1 = arguments[1];
+                if (!($0 instanceof Array && $0.length === 0))
+                    throw new Error('backtrack');
+                const ys = $1;
+                return [];
+            } catch (e) {
+                if (e.message !== 'backtrack')
+                    throw e;
+            }
+            try {
+                if (arguments.length !== 2)
+                    throw new Error('backtrack');
+                const $0 = arguments[0], $1 = arguments[1];
+                if (!($0 instanceof Array && $0.length >= 1))
+                    throw new Error('backtrack');
+                const x = $0[0], xs = $0.slice(1);
+                const ys = $1;
+                if (elem(x, ys))
+                    return f(xs, ys);
+                if (true)
+                    return [x].concat(f(xs, [x].concat(ys)));
+            } catch (e) {
+                if (e.message !== 'backtrack')
+                    throw e;
+            }
+        }
+        return f(xs, []);
+    } catch (e) {
+        if (e.message !== 'backtrack')
+            throw e;
+    }
+}
+module.exports = {
+    preDefinitions,
+    postDefinitions,
+    main,
+    statement2body,
+    definition2body,
+    functionBlock,
+    pattern2body,
+    patternDestructure,
+    value2expression,
+    expression2expression,
+    function_,
+    backtrackable,
+    guardedBlock,
+    andExpr,
+    strConcatExpr,
+    failedStat,
+    variableDecls,
+    variableDecl,
+    varDecl,
+    callExpr,
+    memberExpr,
+    dotMemberExpr,
+    logicalExpr,
+    notExpr,
+    binaryExpr,
+    assignExpr,
+    identifier,
+    literal,
+    blockStat,
+    ifStat,
+    returnStat,
+    throwStat,
+    map,
+    foldl,
+    filter,
+    elem,
+    length,
+    concat,
+    range,
+    zip,
+    enumerate,
+    nub
+};

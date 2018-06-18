@@ -9,7 +9,7 @@ class Compiler {
   }
 
   convertAst(uttrAst) {
-    return convert(uttrAst);
+    return convert.main(uttrAst);
   }
 
   render(esAst) {

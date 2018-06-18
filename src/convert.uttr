@@ -851,7 +851,16 @@ main statements = {
   sourceType: "script"
 }
 {
-  exportsVariables = ["main"]
+  exportsVariables = nub(concat(map([
+    {
+      type: "functionDefinition",
+      identifier
+    } = [identifier],
+    {
+      type: "constantDefinition",
+      pattern
+    } = map([x = x[0]], patternDestructure(pattern, null).bindings)
+  ], map([{value} = value], statements))))
 }
 
 statement2body
@@ -1280,3 +1289,12 @@ zip
   (x:xs, y:ys) = [x, y]:zip(xs, ys)
 
 enumerate xs = zip(range(length(xs)), xs)
+
+nub xs = f(xs, [])
+  {
+    f
+      ([], ys) = [],
+      (x:xs, ys)
+        | elem(x, ys) = f(xs, ys)
+        | true        = x:f(xs, x:ys)
+  }
