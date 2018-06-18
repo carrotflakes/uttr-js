@@ -801,7 +801,7 @@ preDefinitions = [
         }
     ]
 
-postDefinitions =
+postDefinitions(xs) =
     [
         {
             "type": "ExpressionStatement",
@@ -821,8 +821,24 @@ postDefinitions =
                     }
                 },
                 "right": {
-                    "type": "Identifier",
-                    "name": "main"
+                    "type": "ObjectExpression",
+                    "properties": map([x =
+                        {
+                            "type": "Property",
+                            "key": {
+                                "type": "Identifier",
+                                "name": x
+                            },
+                            "computed": false,
+                            "value": {
+                                "type": "Identifier",
+                                "name": x
+                            },
+                            "kind": "init",
+                            "method": false,
+                            "shorthand": true
+                        }
+                    ], xs)
                 }
             }
         }
@@ -831,8 +847,11 @@ postDefinitions =
 
 main statements = {
   type: "Program",
-  body: preDefinitions + [varDecl([["$tmp", null]])] + concat(map(statement2body, statements)) + postDefinitions,
+  body: preDefinitions + [varDecl([["$tmp", null]])] + concat(map(statement2body, statements)) + postDefinitions(exportsVariables),
   sourceType: "script"
+}
+{
+  exportsVariables = ["main"]
 }
 
 statement2body
