@@ -1,3 +1,4 @@
+module.exports = `
 function $plus(x, y) {
   if (x instanceof Array && y instanceof Array)
     return x.concat(y);
@@ -46,3 +47,4 @@ function typeOf(x) {
     return 'closure';
   return type;
 }
+`;

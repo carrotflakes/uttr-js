@@ -1,6 +1,7 @@
 import parse from './uttr.sg';
 import escodegen from 'escodegen';
 import convert from './convert.uttr';
+import preCode from './preDefinedFunctions';
 
 class Compiler {
 
@@ -17,7 +18,7 @@ class Compiler {
   }
 
   compile(source) {
-    return this.render(this.convertAst(this.parse(source)));
+    return preCode + this.render(this.convertAst(this.parse(source)));
   }
 
 }
