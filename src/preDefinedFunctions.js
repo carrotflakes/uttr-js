@@ -5,6 +5,8 @@ function $plus(x, y) {
   return x + y;
 }
 function $equal(x, y) {
+  if (x === y)
+    return true;
   if (x instanceof Array) {
     if (y instanceof Array && x.length === y.length) {
       for (const i in x) {
