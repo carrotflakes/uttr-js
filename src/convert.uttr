@@ -141,7 +141,7 @@ patternDestructure(pattern, indicator) = [
   } = foldl(merge, [
     {
       conditions: [andExpr([
-        binaryExpr("instanceof", indicator, identifier("Array")),
+        logicalExpr("||", binaryExpr("instanceof", indicator, identifier("Array")), binaryExpr("===", typeofExpr(indicator), literal("string"))),
         binaryExpr(">=", dotMemberExpr(indicator, identifier("length")), literal(1))
       ])],
       bindings: []
@@ -380,6 +380,13 @@ logicalExpr(operator, left, right) = {
 notExpr(argument) = {
   type: "UnaryExpression",
   operator: "!",
+  argument,
+  prefix: true
+}
+
+typeofExpr(argument) = {
+  type: "UnaryExpression",
+  operator: "typeof",
   argument,
   prefix: true
 }
