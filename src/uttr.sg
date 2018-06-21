@@ -55,7 +55,7 @@ patterns =
   @expression<\"pattern">
 
 expression<mode> = operatorSystem<mode>
-expressions<mode> = sepBy<operatorSystem<mode>, ",">
+expressions<mode> = sepEndBy<operatorSystem<mode>, ",">
 
 operatorSystem<mode> = operator1<mode>
 
@@ -207,7 +207,7 @@ factor<mode> =
       value: ("[" _ expressions<mode> _ "]")
       type:=listExpression
     |
-      members: ("{" _ sepBy<member<mode>, ","> _ "}")
+      members: ("{" _ sepEndBy<member<mode>, ","> _ "}")
       type:=objectExpression
     |
       block: ("[" _ block _ "]")
@@ -231,7 +231,7 @@ factor<mode> =
       value: ("[" _ expressions<mode> _ "]")
       type:=listExpression
     |
-      members: ("{" _ sepBy<member<mode>, ","> _ "}")
+      members: ("{" _ sepEndBy<member<mode>, ","> _ "}")
       type:=objectExpression
     }
   )
@@ -258,7 +258,7 @@ member<mode> =
     type:=spreadMember
   }
 
-block = sepBy1<{
+block = sepEndBy1<{
     patterns: patterns
     _
     guardClausesOrBody: (body | guardClauses)
@@ -533,5 +533,6 @@ reservedWord = "import" | "true" | "false" | "null"
 many<x> = @?(x *(_ x))
 many1<x> = @(x *(_ x))
 sepBy<x, sep> = @?(x *(_ sep _ x))
+sepEndBy<x, sep> = @?(x *(_ sep _ x) ?(_ sep))
 sepBy1<x, sep> = @(x *(_ sep _ x))
 sepEndBy1<x, sep> = @(x *(_ sep _ x) ?(_ sep))
