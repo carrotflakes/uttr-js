@@ -65,12 +65,15 @@ definition2body
 } = [assignExpr(identifier("$tmp"), expression2expression(expression))] +
   pattern2body(pattern, identifier("$tmp"))
 
-functionBlock xs = blockStat(map([
-  {
-    patterns,
-    guardClausesOrBody,
-    whereClause
-  } = backtrackable(
+functionBlock xs = blockStat(concat(map([
+  [
+    i,
+    {
+      patterns,
+      guardClausesOrBody,
+      whereClause
+    }
+  ] = [true = [x=x], false = [x=[backtrackable(x)]]](i == length(xs) - 1)(
       [ifStat(binaryExpr("!==", dotMemberExpr(identifier("arguments"), identifier("length")), literal(length(patterns))), failedStat())] +
       variableDecls(map([i = ["$" + str(i), memberExpr(identifier("arguments"), literal(i))]], range(length(patterns)))) +
       concat(
@@ -87,7 +90,7 @@ functionBlock xs = blockStat(map([
           value
         } = map([{guard, body} = ifStat(expression2expression(guard), returnStat(expression2expression(body)))], value)
       ](guardClausesOrBody))
-], xs) + [failedStat()])
+], enumerate(xs))))
 
 pattern2body(pattern, indicator) =
   [[] = [], _ = [ifStat(notExpr(andExpr(conditions)), failedStat())]](conditions) +
