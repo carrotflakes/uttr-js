@@ -242,6 +242,15 @@ expression2expression
     {type: "spreadMember", value} = {
       type: "SpreadElement",
       argument: expression2expression(value)
+    },
+    {type: "computedPropertyMember", key, value} = {
+      type: "Property",
+      key: expression2expression(key),
+      computed: true,
+      value: expression2expression(value),
+      kind: "init",
+      method: false,
+      shorthand: false
     }
   ], members)
 },

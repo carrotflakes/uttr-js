@@ -257,6 +257,14 @@ member<mode> =
     value: expression<mode>
     type:=spreadMember
   }
+|
+  {
+    mode -? {return $ == "expression";} -|
+    key: ("[" _ expression<mode> _ "]")
+    _ ":" _
+    value: expression<mode>
+    type:=computedPropertyMember
+  }
 
 block = sepEndBy1<{
     patterns: patterns
