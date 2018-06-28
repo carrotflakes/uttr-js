@@ -17,11 +17,11 @@ module.exports = {
         use: 'babel-loader'
       },
       {
-        test: /\.sg/,
+        test: /\.sg$/,
         use: "snakeparser-loader"
       },
       {
-        test: /\.uttr/,
+        test: /\.uttr$/,
         use: "uttr-loader"
       }
     ]
