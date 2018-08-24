@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "escodegen": "^1.9.1",
-    "snakeparser-loader": "^1.0.1"
+    "snakeparser-loader": "^1.0.1",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.4",
     "babel-preset-es2015": "^6.24.1",
