@@ -1,4 +1,5 @@
 module.exports = {
+  mode: 'production',
   entry: {
     build: './src/index.js',
   },
@@ -7,7 +8,8 @@ module.exports = {
     filename: "main.js",
     sourcePrefix: "",
     library: 'uttr',
-    libraryTarget: 'commonjs2',
+    libraryTarget: 'umd',
+    globalObject: 'this'
   },
   module: {
     rules: [

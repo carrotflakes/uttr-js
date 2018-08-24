@@ -3,7 +3,7 @@ import escodegen from 'escodegen';
 import convert from './convert.uttr';
 import preCode from './preDefinedFunctions';
 
-class Compiler {
+export class Compiler {
 
   parse(source) {
     return parse(source);
@@ -22,5 +22,3 @@ class Compiler {
   }
 
 }
-
-module.exports = Compiler;
